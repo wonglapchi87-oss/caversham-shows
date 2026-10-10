@@ -6,7 +6,7 @@ header{background:#2f6b3a;color:#fff;padding:12px 14px}h1{margin:0;font-size:20p
 header a{color:#fff;font-size:14px}
 .ctl{padding:10px 12px;display:grid;gap:8px}
 label{font-size:14px;font-weight:600}select{font-size:18px;padding:10px;border-radius:12px;border:2px solid #2f6b3a;width:100%;background:#fff}
-.mapbox{position:relative;margin:0 8px}.mapbox img{width:100%;display:block;border-radius:12px}
+.mapbox{position:relative;margin:0 8px}
 svg{position:absolute;inset:0;width:100%;height:100%}
 .steps{background:#fff;margin:10px 12px;border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .steps ol{margin:0;padding-left:22px;font-size:18px;line-height:1.5}.steps .h{font-weight:700;font-size:16px;margin-bottom:6px}
@@ -20,9 +20,17 @@ svg{position:absolute;inset:0;width:100%;height:100%}
 <button class="btn" id="arr">✅ I'm here (set as my spot)</button>
 </div>
 <div class="steps" id="steps"></div>
-<div class="mapbox"><img src="map.jpg" alt="Park map"><svg viewBox="0 0 768 1024" id="svg"></svg></div>
-<div class="note">Hold the paper map the same way as this picture: entrance at the bottom, Molly's Farm at the top. GPS is too rough inside a small park, so tap "I'm here" when you arrive.</div>
+<div class="mapbox"><svg viewBox="110 130 520 820" id="svg" style="position:static;background:#cfe9b8;border-radius:16px"></svg></div>
+<div class="note">Entrance is at the bottom, Molly's Farm at the top. Tap any icon to go there. GPS is too rough inside a small park, so tap "I'm here" when you arrive.</div>
 <script>
+const BG=`
+<rect x="185" y="150" width="250" height="160" rx="22" fill="#f3e3b5"/><text x="215" y="180" font-size="18" font-weight="700" fill="#7a5a1a">Molly's Farm</text>
+<ellipse cx="200" cy="560" rx="85" ry="110" fill="#b5dc9a"/><text x="140" y="500" font-size="15" font-weight="700" fill="#2f6b3a">South-West</text>
+<ellipse cx="310" cy="650" rx="55" ry="120" fill="#e9d9a8" transform="rotate(-20 310 650)"/><text x="255" y="610" font-size="14" font-weight="700" fill="#7a5a1a">Kangaroo</text>
+<ellipse cx="470" cy="470" rx="90" ry="90" fill="#b5dc9a"/><text x="455" y="425" font-size="15" font-weight="700" fill="#2f6b3a">North</text>
+<ellipse cx="520" cy="660" rx="85" ry="75" fill="#c8e6f0"/><text x="495" y="610" font-size="15" font-weight="700" fill="#245b78">Koalas</text>
+<ellipse cx="250" cy="850" rx="100" ry="70" fill="#b5dc9a"/><text x="190" y="905" font-size="15" font-weight="700" fill="#2f6b3a">North-East</text>
+<rect x="390" y="790" width="80" height="140" rx="10" fill="#f6efe2" stroke="#999"/><text x="400" y="945" font-size="14" font-weight="700" fill="#555">Entrance</text>`;
 const N={
 entry:[425,815,"Entrance / Exit 🚪"],
 kiosk:[420,900,"Kiosk & toilets 🍟"],
@@ -56,16 +64,17 @@ for(const k of places){F.add(new Option(N[k][2],k));T.add(new Option(N[k][2],k))
 F.value=localStorage.cvFrom||"entry";T.value=localStorage.cvTo||"koala";
 function draw(){const s=F.value,t=T.value;localStorage.cvFrom=s;localStorage.cvTo=t;
 const svg=document.getElementById('svg'),st=document.getElementById('steps');
-let h='';for(const k of places)h+=`<circle cx="${N[k][0]}" cy="${N[k][1]}" r="9" fill="#fff" stroke="#2f6b3a" stroke-width="3" data-k="${k}"/>`;
+let h=BG;for(const[a,b]of E)h+=`<line x1="${N[a][0]}" y1="${N[a][1]}" x2="${N[b][0]}" y2="${N[b][1]}" stroke="#a8875a" stroke-width="12" stroke-linecap="round"/>`;
+for(const k of places){const em=[...N[k][2]].slice(-2).join('').trim();h+=`<g data-k="${k}" style="cursor:pointer"><circle cx="${N[k][0]}" cy="${N[k][1]}" r="20" fill="#fff" stroke="#2f6b3a" stroke-width="3"/><text x="${N[k][0]}" y="${N[k][1]+8}" font-size="22" text-anchor="middle">${em}</text></g>`}
 if(s==t){st.innerHTML='<div class="h">You\'re already here 🎉</div>';}
 else{const r=route(s,t);const pts=r.map(k=>N[k][0]+','+N[k][1]).join(' ');
 h+=`<polyline points="${pts}" fill="none" stroke="#e07b00" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`;
 let li='';for(let i=0;i<r.length-1;i++){const a=r[i],b=r[i+1];li+=`<li>Walk ${dir(a,b)} to <b>${N[b][2]=="path"?"the fork in the path":N[b][2]}</b></li>`}
 st.innerHTML=`<div class="h">${N[s][2]} → ${N[t][2]}</div><ol>${li}</ol>`}
-h+=`<circle cx="${N[s][0]}" cy="${N[s][1]}" r="16" fill="#1e6fd9" stroke="#fff" stroke-width="4"/>`;
-h+=`<circle cx="${N[t][0]}" cy="${N[t][1]}" r="16" fill="#e0262b" stroke="#fff" stroke-width="4"/>`;
+h+=`<circle cx="${N[s][0]}" cy="${N[s][1]}" r="26" fill="none" stroke="#1e6fd9" stroke-width="6"/><text x="${N[s][0]}" y="${N[s][1]-32}" font-size="16" font-weight="800" text-anchor="middle" fill="#1e6fd9">YOU</text>`;
+h+=`<circle cx="${N[t][0]}" cy="${N[t][1]}" r="26" fill="none" stroke="#e0262b" stroke-width="6"/><text x="${N[t][0]}" y="${N[t][1]-32}" font-size="16" font-weight="800" text-anchor="middle" fill="#e0262b">GO</text>`;
 svg.innerHTML=h;
-svg.querySelectorAll('circle[data-k]').forEach(c=>c.onclick=()=>{T.value=c.dataset.k;draw()})}
+svg.querySelectorAll('g[data-k]').forEach(c=>c.onclick=()=>{T.value=c.dataset.k;draw()})}
 F.onchange=T.onchange=draw;
 document.getElementById('arr').onclick=()=>{F.value=T.value;draw()};
 draw();
