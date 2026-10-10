@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caversham Shows Today</title>
+<style>
+body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:#eef7e8;color:#1f3a1f}
+header{background:#2f6b3a;color:#fff;padding:18px 16px 14px;position:sticky;top:0}
+h1{margin:0;font-size:22px}#clock{font-size:15px;opacity:.9;margin-top:4px}
+.wrap{padding:12px}
+.card{background:#fff;border-radius:16px;padding:14px 16px;margin:10px 0;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;gap:12px;align-items:center}
+.card .e{font-size:38px}.card .t{font-size:20px;font-weight:700}.card .n{font-size:19px;font-weight:600}.card .w{font-size:14px;color:#557}
+.card .s{font-size:14px;font-weight:700;margin-top:4px}
+.now{border:3px solid #e07b00;background:#fff6e6}.now .s{color:#c25e00}
+.next .s{color:#2f6b3a}
+.alert{background:#fde8e8;color:#9b1c1c;border-radius:12px;padding:10px 12px;font-size:15px;margin:10px 0}
+.done{text-align:center;font-size:18px;padding:30px 10px}
+footer{font-size:13px;color:#557;padding:8px 16px 30px}
+</style></head><body>
+<header><h1>🦘 Caversham shows today</h1><div id="clock"></div></header>
+<div class="wrap">
+<div class="alert">⚠️ Kangaroo feeding and walk-through aviaries are closed today because of bird flu precautions.</div>
+<div id="list"></div>
+</div>
+<footer>Park closes 4:30pm · Toilets 4:20pm · Kiosk 3:45pm · Shop 4:20pm<br>Wombat photo $10 · Hold a koala $35 (tickets at shop)</footer>
+<script>
+const S=[
+["🐨","Meet the Koalas","Koala Section (right side)","09:00","09:30"],
+["🐄","Farm Show","Molly's Farm (top)","10:00","10:30"],
+["🦔","Wombat and Friends","Next to Reptile House","11:00","11:30"],
+["🐨","Meet the Koalas","Koala Section (right side)","11:30","12:00"],
+["🐧","Penguin Feeding","Penguins","12:00","12:15"],
+["🐄","Farm Show","Molly's Farm (top)","13:00","13:30"],
+["🦔","Wombat and Friends","Next to Reptile House","14:00","14:30"],
+["🐄","Farm Show","Molly's Farm (top)","15:00","15:30"],
+["🐨","Meet the Koalas","Koala Section (right side)","15:30","16:00"]];
+const m=s=>{const[a,b]=s.split(':');return +a*60+ +b};
+const f=s=>{let[a,b]=s.split(':').map(Number);const p=a>=12?'pm':'am';a=a%12||12;return a+':'+String(b).padStart(2,'0')+p};
+function now(){const d=new Date(new Date().toLocaleString('en-US',{timeZone:'Australia/Perth'}));return d}
+function draw(){const d=now(),n=d.getHours()*60+d.getMinutes();
+document.getElementById('clock').textContent='Now '+d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})+' Perth';
+const up=S.filter(x=>m(x[4])>n);let h='',first=true;
+up.forEach(x=>{const st=m(x[3]),on=st<=n;let cls='',s='';
+if(on){cls='now';s='ON NOW · ends in '+(m(x[4])-n)+' min'}
+else{const k=st-n;s=(first?'NEXT · ':'')+'starts in '+(k>=60?Math.floor(k/60)+'h '+k%60+'m':k+' min');if(first)cls='next'}
+if(!on)first=false;
+h+=`<div class="card ${cls}"><div class="e">${x[0]}</div><div><div class="t">${f(x[3])}–${f(x[4])}</div><div class="n">${x[1]}</div><div class="w">📍 ${x[2]}</div><div class="s">${s}</div></div></div>`});
+document.getElementById('list').innerHTML=h||'<div class="done">All shows are finished for today 🎉<br>Park closes 4:30pm.</div>'}
+draw();setInterval(draw,30000);
+</script></body></html>
