@@ -1,0 +1,72 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caversham Map & Directions</title>
+<style>
+body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:#eef7e8;color:#1f3a1f}
+header{background:#2f6b3a;color:#fff;padding:12px 14px}h1{margin:0;font-size:20px}
+header a{color:#fff;font-size:14px}
+.ctl{padding:10px 12px;display:grid;gap:8px}
+label{font-size:14px;font-weight:600}select{font-size:18px;padding:10px;border-radius:12px;border:2px solid #2f6b3a;width:100%;background:#fff}
+.mapbox{position:relative;margin:0 8px}.mapbox img{width:100%;display:block;border-radius:12px}
+svg{position:absolute;inset:0;width:100%;height:100%}
+.steps{background:#fff;margin:10px 12px;border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.steps ol{margin:0;padding-left:22px;font-size:18px;line-height:1.5}.steps .h{font-weight:700;font-size:16px;margin-bottom:6px}
+.btn{font-size:16px;padding:10px;border-radius:12px;border:0;background:#e07b00;color:#fff;font-weight:700}
+.note{font-size:13px;color:#557;padding:4px 14px 30px}
+</style></head><body>
+<header><h1>🗺️ Caversham map & directions</h1><a href="./">← Shows today</a></header>
+<div class="ctl">
+<div><label>📍 I'm at</label><select id="from"></select></div>
+<div><label>🎯 Take me to</label><select id="to"></select></div>
+<button class="btn" id="arr">✅ I'm here (set as my spot)</button>
+</div>
+<div class="steps" id="steps"></div>
+<div class="mapbox"><img src="map.jpg" alt="Park map"><svg viewBox="0 0 768 1024" id="svg"></svg></div>
+<div class="note">Hold the paper map the same way as this picture: entrance at the bottom, Molly's Farm at the top. GPS is too rough inside a small park, so tap "I'm here" when you arrive.</div>
+<script>
+const N={
+entry:[425,815,"Entrance / Exit 🚪"],
+kiosk:[420,900,"Kiosk & toilets 🍟"],
+k1:[428,700,"path"],
+koala:[548,650,"Meet the Koalas 🐨"],
+toil2:[492,768,"Toilets (near koalas) 🚻"],
+j1:[333,575,"path"],
+north:[440,500,"North Section 🦤"],
+reptile:[345,470,"Reptile House 🐍"],
+wombat:[345,405,"Wombat & Friends 🦔"],
+pic1:[275,367,"Picnic & toilets (middle) 🧺"],
+fg:[300,318,"path"],
+farm:[400,268,"Farm Show 🐄"],
+molly:[270,225,"Molly's Farm 🐑"],
+sw:[205,640,"South-West Section 🐢"],
+roo:[300,660,"Kangaroo Walkthrough 🦘"],
+ne:[265,840,"North-East Section 🐫"]};
+const E=[["entry","kiosk"],["entry","k1"],["k1","koala"],["k1","toil2"],["k1","j1"],["j1","north"],["j1","reptile"],["reptile","north"],["reptile","wombat"],["wombat","pic1"],["wombat","fg"],["fg","farm"],["fg","molly"],["j1","sw"],["j1","roo"],["roo","ne"],["ne","entry"]];
+const places=Object.keys(N).filter(k=>N[k][2]!="path");
+const A={};for(const[a,b]of E){(A[a]=A[a]||[]).push(b);(A[b]=A[b]||[]).push(a)}
+const d=(a,b)=>Math.hypot(N[a][0]-N[b][0],N[a][1]-N[b][1]);
+function route(s,t){const D={},P={},Q=new Set(Object.keys(N));for(const k of Q)D[k]=1e9;D[s]=0;
+while(Q.size){let u=null;for(const k of Q)if(u==null||D[k]<D[u])u=k;Q.delete(u);if(u==t)break;for(const v of A[u]||[]){const x=D[u]+d(u,v);if(x<D[v]){D[v]=x;P[v]=u}}}
+const r=[t];while(r[0]!=s)r.unshift(P[r[0]]);return r}
+function dir(a,b){const dx=N[b][0]-N[a][0],dy=N[b][1]-N[a][1];
+if(Math.abs(dy)>Math.abs(dx)*1.2)return dy<0?"⬆️ up the path (towards the farm)":"⬇️ down the path (towards the entrance)";
+return dx>0?"➡️ to the right":"⬅️ to the left"}
+const nm=k=>N[k][2]=="path"?"the path junction":N[k][2];
+const F=document.getElementById('from'),T=document.getElementById('to');
+for(const k of places){F.add(new Option(N[k][2],k));T.add(new Option(N[k][2],k))}
+F.value=localStorage.cvFrom||"entry";T.value=localStorage.cvTo||"koala";
+function draw(){const s=F.value,t=T.value;localStorage.cvFrom=s;localStorage.cvTo=t;
+const svg=document.getElementById('svg'),st=document.getElementById('steps');
+let h='';for(const k of places)h+=`<circle cx="${N[k][0]}" cy="${N[k][1]}" r="9" fill="#fff" stroke="#2f6b3a" stroke-width="3" data-k="${k}"/>`;
+if(s==t){st.innerHTML='<div class="h">You\'re already here 🎉</div>';}
+else{const r=route(s,t);const pts=r.map(k=>N[k][0]+','+N[k][1]).join(' ');
+h+=`<polyline points="${pts}" fill="none" stroke="#e07b00" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`;
+let li='';for(let i=0;i<r.length-1;i++){const a=r[i],b=r[i+1];li+=`<li>Walk ${dir(a,b)} to <b>${N[b][2]=="path"?"the fork in the path":N[b][2]}</b></li>`}
+st.innerHTML=`<div class="h">${N[s][2]} → ${N[t][2]}</div><ol>${li}</ol>`}
+h+=`<circle cx="${N[s][0]}" cy="${N[s][1]}" r="16" fill="#1e6fd9" stroke="#fff" stroke-width="4"/>`;
+h+=`<circle cx="${N[t][0]}" cy="${N[t][1]}" r="16" fill="#e0262b" stroke="#fff" stroke-width="4"/>`;
+svg.innerHTML=h;
+svg.querySelectorAll('circle[data-k]').forEach(c=>c.onclick=()=>{T.value=c.dataset.k;draw()})}
+F.onchange=T.onchange=draw;
+document.getElementById('arr').onclick=()=>{F.value=T.value;draw()};
+draw();
+</script></body></html>
