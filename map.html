@@ -22,26 +22,26 @@ svg{position:absolute;inset:0;width:100%;height:100%}
 </div>
 <div class="steps" id="steps"></div>
 <div class="mapbox"><svg viewBox="110 130 520 820" id="svg" style="position:static;background:#cfe9b8;border-radius:16px"></svg></div>
-<div class="note">Entrance is at the bottom, Molly's Farm at the top. Tap any icon to go there. GPS: tap 📡, then tap "I'm here" at 2 spots far apart once to line it up. After that the blue dot follows you and "I'm at" updates itself. Park GPS can be 10–30 m off.</div>
+<div class="note">Entrance is at the bottom, Molly's Farm at the top. Tap any icon to go there. GPS: tap 📡 and Allow. The blue dot shows where you really are (lined up with OpenStreetMap points for the entrance and Farm Show). Park GPS can be 10–30 m off.</div>
 <script>
 const BG=`
 <rect x="185" y="150" width="250" height="160" rx="22" fill="#f3e3b5"/><text x="215" y="180" font-size="18" font-weight="700" fill="#7a5a1a">Molly's Farm</text>
 <ellipse cx="200" cy="560" rx="85" ry="110" fill="#b5dc9a"/><text x="140" y="500" font-size="15" font-weight="700" fill="#2f6b3a">South-West</text>
 <ellipse cx="310" cy="650" rx="55" ry="120" fill="#e9d9a8" transform="rotate(-20 310 650)"/><text x="255" y="610" font-size="14" font-weight="700" fill="#7a5a1a">Kangaroo</text>
 <ellipse cx="470" cy="470" rx="90" ry="90" fill="#b5dc9a"/><text x="455" y="425" font-size="15" font-weight="700" fill="#2f6b3a">North</text>
-<ellipse cx="520" cy="660" rx="85" ry="75" fill="#c8e6f0"/><text x="495" y="610" font-size="15" font-weight="700" fill="#245b78">Koalas</text>
+<ellipse cx="480" cy="660" rx="70" ry="60" fill="#c8e6f0"/><text x="470" y="618" font-size="15" font-weight="700" fill="#245b78">Koalas</text>
 <ellipse cx="250" cy="850" rx="100" ry="70" fill="#b5dc9a"/><text x="190" y="905" font-size="15" font-weight="700" fill="#2f6b3a">North-East</text>
 <rect x="390" y="790" width="80" height="140" rx="10" fill="#f6efe2" stroke="#999"/><text x="400" y="945" font-size="14" font-weight="700" fill="#555">Entrance</text>`;
 const N={
 entry:[425,815,"Entrance / Exit 🚪"],
 kiosk:[420,900,"Kiosk & toilets 🍟"],
 k1:[428,700,"path"],
-koala:[548,650,"Meet the Koalas 🐨"],
+koala:[455,665,"Meet the Koalas 🐨"],
 toil2:[492,768,"Toilets (near koalas) 🚻"],
 j1:[333,575,"path"],
 north:[440,500,"North Section 🦤"],
 reptile:[345,470,"Reptile House 🐍"],
-wombat:[345,405,"Wombat & Friends 🦔"],
+wombat:[392,400,"Wombat & Friends 🦔"],
 pic1:[275,367,"Picnic & toilets (middle) 🧺"],
 fg:[300,318,"path"],
 farm:[400,268,"Farm Show 🐄"],
@@ -89,7 +89,7 @@ document.getElementById('arr').onclick=()=>{F.value=T.value;draw()};
 draw();
 
 // ---- GPS calibration: map coords <-> lat/lon via 2 tapped points ----
-let CAL=JSON.parse(localStorage.cvCal||'[]');let FIX=null,HEAD=null;
+let CAL=JSON.parse(localStorage.cvCal2||'null')||[{m:[425,815],lat:-31.833905,lon:115.949911},{m:[400,268],lat:-31.83371,lon:115.95289}];let FIX=null,HEAD=null;
 const toXY=(lat,lon)=>[lon*Math.cos(lat*Math.PI/180)*111320,-lat*110540];
 function fit(){if(CAL.length<2)return null;const[a,b]=CAL.slice(-2);
 const P1=a.m,P2=b.m,G1=toXY(a.lat,a.lon),G2=toXY(b.lat,b.lon);
@@ -99,16 +99,16 @@ return {f:(lat,lon)=>{const g=toXY(lat,lon),x=g[0]-G1[0],y=g[1]-G1[1];return[P1[
 const gst=document.getElementById('gst');
 function nearest(xy){let best=null,bd=1e9;for(const k of places){const q=Math.hypot(N[k][0]-xy[0],N[k][1]-xy[1]);if(q<bd){bd=q;best=k}}return best}
 function onFix(p){FIX=p.coords;const F2=fit();
-if(!F2){gst.innerHTML=`📡 GPS on (±${Math.round(FIX.accuracy)}m). <b>Set-up:</b> tap "I'm here" at 2 different spots far apart (e.g. Entrance, then Koalas) so I can line GPS up with the map. Done: ${Math.min(CAL.length,2)}/2`;return}
+if(!F2)return;
 const xy=F2.f(FIX.latitude,FIX.longitude);const k=nearest(xy);
-gst.innerHTML=`📡 GPS (±${Math.round(FIX.accuracy)}m): you're near <b>${N[k][2]}</b>`;
+gst.innerHTML=`📡 GPS (±${Math.round(FIX.accuracy)}m): blue dot = you, nearest spot <b>${N[k][2]}</b>`;
 if(F.value!=k){F.value=k;draw()}
 window.ME=xy;drawMe();updArrow()}
-function drawMe(){if(!window.ME)return;const svg=document.getElementById('svg');let c=svg.querySelector('#me');if(!c){c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.id='me';c.setAttribute('r',10);c.setAttribute('fill','#1e6fd9');c.setAttribute('stroke','#fff');c.setAttribute('stroke-width',4);svg.appendChild(c)}c.setAttribute('cx',ME[0]);c.setAttribute('cy',ME[1])}
+function drawMe(){if(!window.ME)return;const svg=document.getElementById('svg');let c=svg.querySelector('#me');if(!c){c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.id='me';c.setAttribute('r',14);c.setAttribute('fill','#1e6fd9');c.setAttribute('stroke','#fff');c.setAttribute('stroke-width',4);svg.appendChild(c)}c.setAttribute('cx',ME[0]);c.setAttribute('cy',ME[1])}
 document.getElementById('gps').onclick=()=>{if(!navigator.geolocation){gst.textContent='GPS not available on this phone';return}
 gst.textContent='📡 Asking for location… tap Allow';navigator.geolocation.watchPosition(onFix,e=>gst.textContent='GPS error: '+e.message+' (check location is allowed for Safari/Chrome)',{enableHighAccuracy:true,maximumAge:2000})};
 const oldArr=document.getElementById('arr').onclick;
-document.getElementById('arr').onclick=()=>{if(FIX){CAL.push({m:[N[T.value][0],N[T.value][1]],lat:FIX.latitude,lon:FIX.longitude});CAL=CAL.slice(-2);localStorage.cvCal=JSON.stringify(CAL)}F.value=T.value;draw();if(FIX)onFix({coords:FIX})};
+document.getElementById('arr').onclick=()=>{if(FIX){CAL.push({m:[N[T.value][0],N[T.value][1]],lat:FIX.latitude,lon:FIX.longitude});CAL=CAL.slice(-2);localStorage.cvCal2=JSON.stringify(CAL)}F.value=T.value;draw();if(FIX)onFix({coords:FIX})};
 // ---- Compass arrow: points along the next path segment ----
 function updArrow(){if(HEAD==null||!window.RT||RT.length<2)return;const F2=fit();if(!F2)return;
 const a=RT[0],b=RT[1];const mapAng=Math.atan2(N[b][1]-N[a][1],N[b][0]-N[a][0]);
