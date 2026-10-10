@@ -5,20 +5,17 @@
 <style>html,body{margin:0;height:100%;font-family:-apple-system,system-ui,sans-serif}
 header{background:#2f6b3a;color:#fff;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 header h1{font-size:18px;margin:0;flex:1}header a{color:#fff;font-size:14px}
-#map{position:absolute;top:92px;bottom:0;left:0;right:0}
+#map{position:absolute;top:44px;bottom:0;left:0;right:0}
 .b{border:0;border-radius:10px;padding:9px 12px;font-weight:700;font-size:15px;color:#fff}
-#st{width:100%;font-size:13px}
+#st{font-size:14px;margin-bottom:6px}#bar{position:absolute;left:8px;right:8px;bottom:22px;z-index:1000;background:#fff;border-radius:14px;padding:10px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .me{width:22px;height:22px;border-radius:50%;background:#1e6fd9;border:4px solid #fff;box-shadow:0 0 0 2px #1e6fd9;position:relative}
 .cone{position:absolute;left:50%;top:50%;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:44px solid rgba(30,111,217,.35);transform-origin:50% 100%;margin-left:-16px;margin-top:-44px}
 </style></head><body>
-<header><h1>📡 Caversham live GPS</h1><a href="map.html">🗺️ Map</a><a href="./">⏰ Shows</a>
-<button class="b" id="go" style="background:#1e6fd9">📡 Start GPS</button>
-<button class="b" id="cmp" style="background:#555">🧭 Compass</button>
-<button class="b" id="sat" style="background:#e07b00">🛰️ Satellite</button>
-<div id="st">Tap Start GPS, then Allow.</div></header>
+<header><h1>📡 Caversham live GPS</h1><a href="map.html">🗺️ Map</a><a href="./">⏰ Shows</a></header>
+<div id="bar"><div id="st">Tap Start GPS, then Allow.</div><div style="display:flex;gap:6px"><button class="b" id="go" style="background:#1e6fd9;flex:1">📡 Start GPS</button><button class="b" id="cmp" style="background:#555;flex:1">🧭 Compass</button><button class="b" id="sat" style="background:#e07b00;flex:1">🛰️ Satellite</button></div></div>
 <div id="map"></div>
 <script>
-const map=L.map('map',{zoomControl:true}).setView([-31.8339,115.9499],18);
+const map=L.map('map',{zoomControl:true}).setView([-31.8328,115.9512],17);
 const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,maxNativeZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,maxNativeZoom:19,attribution:'Esri'});
 let isSat=false;document.getElementById('sat').onclick=()=>{isSat=!isSat;if(isSat){map.removeLayer(osm);sat.addTo(map)}else{map.removeLayer(sat);osm.addTo(map)}};
