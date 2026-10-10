@@ -15,7 +15,7 @@ header h1{font-size:18px;margin:0;flex:1}header a{color:#fff;font-size:14px}
 <div id="bar"><div id="st">Tap Start GPS, then Allow.</div><div style="display:flex;gap:6px"><button class="b" id="go" style="background:#1e6fd9;flex:1">📡 Start GPS</button><button class="b" id="cmp" style="background:#555;flex:1">🧭 Compass</button><button class="b" id="sat" style="background:#e07b00;flex:1">🛰️ Satellite</button></div></div>
 <div id="map"></div>
 <script>
-const map=L.map('map',{zoomControl:true}).setView([-31.8328,115.9512],17);
+const map=L.map('map',{zoomControl:true}).setView([-31.8343,115.9522],17);
 const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,maxNativeZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
 const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,maxNativeZoom:19,attribution:'Esri'});
 let isSat=false;document.getElementById('sat').onclick=()=>{isSat=!isSat;if(isSat){map.removeLayer(osm);sat.addTo(map)}else{map.removeLayer(sat);osm.addTo(map)}};
