@@ -17,11 +17,12 @@ svg{position:absolute;inset:0;width:100%;height:100%}
 <div class="ctl">
 <div><label>📍 I'm at</label><select id="from"></select></div>
 <div><label>🎯 Take me to</label><select id="to"></select></div>
+<div style="display:flex;gap:8px"><button class="btn" id="gps" style="background:#1e6fd9;flex:1">📡 Use my GPS</button><button class="btn" id="cmp" style="background:#555;flex:1">🧭 Compass</button></div><div id="gst" style="font-size:14px"></div><div id="arrowbox" style="display:none;text-align:center"><div id="arrow" style="font-size:64px;line-height:1;transition:transform .3s">⬆️</div><div id="arrtxt" style="font-weight:700"></div></div>
 <button class="btn" id="arr">✅ I'm here (set as my spot)</button>
 </div>
 <div class="steps" id="steps"></div>
 <div class="mapbox"><svg viewBox="110 130 520 820" id="svg" style="position:static;background:#cfe9b8;border-radius:16px"></svg></div>
-<div class="note">Entrance is at the bottom, Molly's Farm at the top. Tap any icon to go there. GPS is too rough inside a small park, so tap "I'm here" when you arrive.</div>
+<div class="note">Entrance is at the bottom, Molly's Farm at the top. Tap any icon to go there. GPS: tap 📡, then tap "I'm here" at 2 spots far apart once to line it up. After that the blue dot follows you and "I'm at" updates itself. Park GPS can be 10–30 m off.</div>
 <script>
 const BG=`
 <rect x="185" y="150" width="250" height="160" rx="22" fill="#f3e3b5"/><text x="215" y="180" font-size="18" font-weight="700" fill="#7a5a1a">Molly's Farm</text>
@@ -69,13 +70,55 @@ for(const k of places){const em=[...N[k][2]].slice(-2).join('').trim();h+=`<g da
 if(s==t){st.innerHTML='<div class="h">You\'re already here 🎉</div>';}
 else{const r=route(s,t);const pts=r.map(k=>N[k][0]+','+N[k][1]).join(' ');
 h+=`<polyline points="${pts}" fill="none" stroke="#e07b00" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`;
-let li='';for(let i=0;i<r.length-1;i++){const a=r[i],b=r[i+1];li+=`<li>Walk ${dir(a,b)} to <b>${N[b][2]=="path"?"the fork in the path":N[b][2]}</b></li>`}
+let li='';const nm2=k=>N[k][2]=="path"?"the fork":N[k][2];
+li+=`<li>Start: walk ${dir(r[0],r[1])} towards <b>${nm2(r[1])}</b></li>`;
+for(let i=1;i<r.length-1;i++){const a=r[i-1],b=r[i],c=r[i+1];
+const v1=[N[b][0]-N[a][0],N[b][1]-N[a][1]],v2=[N[c][0]-N[b][0],N[c][1]-N[b][1]];
+const cr=v1[0]*v2[1]-v1[1]*v2[0],dt=v1[0]*v2[0]+v1[1]*v2[1];const ang=Math.abs(Math.atan2(cr,dt))*180/Math.PI;
+const t=ang<30?"⬆️ Go <b>straight</b>":cr>0?"➡️ Turn <b>RIGHT</b>":"⬅️ Turn <b>LEFT</b>";
+li+=`<li>At ${nm2(b)}: ${t} to <b>${nm2(c)}</b></li>`}
+li+=`<li>🎉 Arrive at <b>${N[r[r.length-1]][2]}</b></li>`;
+window.RT=r;
 st.innerHTML=`<div class="h">${N[s][2]} → ${N[t][2]}</div><ol>${li}</ol>`}
 h+=`<circle cx="${N[s][0]}" cy="${N[s][1]}" r="26" fill="none" stroke="#1e6fd9" stroke-width="6"/><text x="${N[s][0]}" y="${N[s][1]-32}" font-size="16" font-weight="800" text-anchor="middle" fill="#1e6fd9">YOU</text>`;
 h+=`<circle cx="${N[t][0]}" cy="${N[t][1]}" r="26" fill="none" stroke="#e0262b" stroke-width="6"/><text x="${N[t][0]}" y="${N[t][1]-32}" font-size="16" font-weight="800" text-anchor="middle" fill="#e0262b">GO</text>`;
 svg.innerHTML=h;
-svg.querySelectorAll('g[data-k]').forEach(c=>c.onclick=()=>{T.value=c.dataset.k;draw()})}
+setTimeout(()=>{drawMe&&drawMe();updArrow&&updArrow()},0);svg.querySelectorAll('g[data-k]').forEach(c=>c.onclick=()=>{T.value=c.dataset.k;draw()})}
 F.onchange=T.onchange=draw;
 document.getElementById('arr').onclick=()=>{F.value=T.value;draw()};
 draw();
+
+// ---- GPS calibration: map coords <-> lat/lon via 2 tapped points ----
+let CAL=JSON.parse(localStorage.cvCal||'[]');let FIX=null,HEAD=null;
+const toXY=(lat,lon)=>[lon*Math.cos(lat*Math.PI/180)*111320,-lat*110540];
+function fit(){if(CAL.length<2)return null;const[a,b]=CAL.slice(-2);
+const P1=a.m,P2=b.m,G1=toXY(a.lat,a.lon),G2=toXY(b.lat,b.lon);
+const dm=[P2[0]-P1[0],P2[1]-P1[1]],dg=[G2[0]-G1[0],G2[1]-G1[1]];const Lm=Math.hypot(...dm),Lg=Math.hypot(...dg);if(Lg<15||Lm<20)return null;
+const rot=Math.atan2(dm[1],dm[0])-Math.atan2(dg[1],dg[0]),sc=Lm/Lg;
+return {f:(lat,lon)=>{const g=toXY(lat,lon),x=g[0]-G1[0],y=g[1]-G1[1];return[P1[0]+sc*(x*Math.cos(rot)-y*Math.sin(rot)),P1[1]+sc*(x*Math.sin(rot)+y*Math.cos(rot))]},rot}}
+const gst=document.getElementById('gst');
+function nearest(xy){let best=null,bd=1e9;for(const k of places){const q=Math.hypot(N[k][0]-xy[0],N[k][1]-xy[1]);if(q<bd){bd=q;best=k}}return best}
+function onFix(p){FIX=p.coords;const F2=fit();
+if(!F2){gst.innerHTML=`📡 GPS on (±${Math.round(FIX.accuracy)}m). <b>Set-up:</b> tap "I'm here" at 2 different spots far apart (e.g. Entrance, then Koalas) so I can line GPS up with the map. Done: ${Math.min(CAL.length,2)}/2`;return}
+const xy=F2.f(FIX.latitude,FIX.longitude);const k=nearest(xy);
+gst.innerHTML=`📡 GPS (±${Math.round(FIX.accuracy)}m): you're near <b>${N[k][2]}</b>`;
+if(F.value!=k){F.value=k;draw()}
+window.ME=xy;drawMe();updArrow()}
+function drawMe(){if(!window.ME)return;const svg=document.getElementById('svg');let c=svg.querySelector('#me');if(!c){c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.id='me';c.setAttribute('r',10);c.setAttribute('fill','#1e6fd9');c.setAttribute('stroke','#fff');c.setAttribute('stroke-width',4);svg.appendChild(c)}c.setAttribute('cx',ME[0]);c.setAttribute('cy',ME[1])}
+document.getElementById('gps').onclick=()=>{if(!navigator.geolocation){gst.textContent='GPS not available on this phone';return}
+gst.textContent='📡 Asking for location… tap Allow';navigator.geolocation.watchPosition(onFix,e=>gst.textContent='GPS error: '+e.message+' (check location is allowed for Safari/Chrome)',{enableHighAccuracy:true,maximumAge:2000})};
+const oldArr=document.getElementById('arr').onclick;
+document.getElementById('arr').onclick=()=>{if(FIX){CAL.push({m:[N[T.value][0],N[T.value][1]],lat:FIX.latitude,lon:FIX.longitude});CAL=CAL.slice(-2);localStorage.cvCal=JSON.stringify(CAL)}F.value=T.value;draw();if(FIX)onFix({coords:FIX})};
+// ---- Compass arrow: points along the next path segment ----
+function updArrow(){if(HEAD==null||!window.RT||RT.length<2)return;const F2=fit();if(!F2)return;
+const a=RT[0],b=RT[1];const mapAng=Math.atan2(N[b][1]-N[a][1],N[b][0]-N[a][0]);
+// map angle -> real bearing (deg from north, clockwise)
+const geoAng=mapAng-F2.rot;const brg=(90+geoAng*180/Math.PI+720)%360;const rel=(brg-HEAD+720)%360;
+const rr=rel>180?rel-360:rel;document.getElementById('arrowbox').style.display='block';
+document.getElementById('arrow').style.transform=`rotate(${rr}deg)`;
+document.getElementById('arrtxt').textContent=Math.abs(rr)<25?'Straight ahead':rr>0?`Turn RIGHT (${Math.round(rr)}°)`:`Turn LEFT (${Math.round(-rr)}°)`}
+function onOri(e){HEAD=e.webkitCompassHeading!=null?e.webkitCompassHeading:(e.absolute&&e.alpha!=null?360-e.alpha:null);updArrow()}
+document.getElementById('cmp').onclick=async()=>{try{if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){const r=await DeviceOrientationEvent.requestPermission();if(r!='granted'){gst.textContent='Compass not allowed';return}}
+window.addEventListener('deviceorientationabsolute',onOri);window.addEventListener('deviceorientation',onOri);
+gst.textContent=fit()?'🧭 Compass on. Hold the phone flat, top pointing where you walk.':'🧭 Compass on. Finish GPS set-up (2 spots) so the arrow knows which way the map faces.'}catch(err){gst.textContent='Compass error: '+err.message}};
 </script></body></html>
