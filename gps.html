@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Caversham – Live GPS</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>html,body{margin:0;height:100%;font-family:-apple-system,system-ui,sans-serif}
+header{background:#2f6b3a;color:#fff;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1}header a{color:#fff;font-size:14px}
+#map{position:absolute;top:92px;bottom:0;left:0;right:0}
+.b{border:0;border-radius:10px;padding:9px 12px;font-weight:700;font-size:15px;color:#fff}
+#st{width:100%;font-size:13px}
+.me{width:22px;height:22px;border-radius:50%;background:#1e6fd9;border:4px solid #fff;box-shadow:0 0 0 2px #1e6fd9;position:relative}
+.cone{position:absolute;left:50%;top:50%;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:44px solid rgba(30,111,217,.35);transform-origin:50% 100%;margin-left:-16px;margin-top:-44px}
+</style></head><body>
+<header><h1>📡 Caversham live GPS</h1><a href="map.html">🗺️ Map</a><a href="./">⏰ Shows</a>
+<button class="b" id="go" style="background:#1e6fd9">📡 Start GPS</button>
+<button class="b" id="cmp" style="background:#555">🧭 Compass</button>
+<button class="b" id="sat" style="background:#e07b00">🛰️ Satellite</button>
+<div id="st">Tap Start GPS, then Allow.</div></header>
+<div id="map"></div>
+<script>
+const map=L.map('map',{zoomControl:true}).setView([-31.8339,115.9499],18);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,maxNativeZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,maxNativeZoom:19,attribution:'Esri'});
+let isSat=false;document.getElementById('sat').onclick=()=>{isSat=!isSat;if(isSat){map.removeLayer(osm);sat.addTo(map)}else{map.removeLayer(sat);osm.addTo(map)}};
+const icon=L.divIcon({className:'',html:'<div class="me"><div class="cone" id="cone" style="display:none"></div></div>',iconSize:[22,22],iconAnchor:[11,11]});
+let me=null,acc=null,follow=true,trail=L.polyline([],{color:'#1e6fd9',weight:4,opacity:.5}).addTo(map);
+map.on('dragstart',()=>follow=false);
+const st=document.getElementById('st');
+document.getElementById('go').onclick=()=>{follow=true;if(!navigator.geolocation){st.textContent='No GPS on this device';return}
+st.textContent='Finding you…';navigator.geolocation.watchPosition(p=>{const ll=[p.coords.latitude,p.coords.longitude];
+if(!me){me=L.marker(ll,{icon}).addTo(map);acc=L.circle(ll,{radius:p.coords.accuracy,color:'#1e6fd9',weight:1,fillOpacity:.12}).addTo(map)}
+me.setLatLng(ll);acc.setLatLng(ll).setRadius(p.coords.accuracy);trail.addLatLng(ll);
+if(follow)map.setView(ll,Math.max(map.getZoom(),18));
+st.textContent=`You're here (±${Math.round(p.coords.accuracy)} m). Drag map to look around, tap Start GPS to re-centre.`},
+e=>st.textContent='GPS error: '+e.message+' — allow Location for your browser in Settings.',{enableHighAccuracy:true,maximumAge:1000})};
+function ori(e){const h=e.webkitCompassHeading!=null?e.webkitCompassHeading:(e.absolute&&e.alpha!=null?360-e.alpha:null);if(h==null)return;
+const c=document.getElementById('cone');if(c){c.style.display='block';c.style.transform=`rotate(${h}deg)`}}
+document.getElementById('cmp').onclick=async()=>{try{if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission){if(await DeviceOrientationEvent.requestPermission()!='granted')return}
+addEventListener('deviceorientationabsolute',ori);addEventListener('deviceorientation',ori);st.textContent='🧭 Compass on: the blue cone shows which way you face.'}catch(err){st.textContent='Compass error: '+err.message}};
+</script></body></html>
